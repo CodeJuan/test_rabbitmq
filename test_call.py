@@ -1,3 +1,4 @@
+import datetime
 from kombu import Connection, Exchange, Queue
 
 media_exchange = Exchange('media', 'direct', durable=True)
@@ -12,7 +13,8 @@ with Connection('amqp://test:test@192.168.161.56:5672//') as conn:
 
     # produce
     producer = conn.Producer(serializer='json')
-    producer.publish({'name': '/tmp/lolcat1.avi', 'size': 1301013},
+    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    producer.publish({'name': '/tmp/lolcat1.avi', 'size': now},
                       exchange=media_exchange, routing_key='video',
                       declare=[video_queue])
 
@@ -24,16 +26,8 @@ with Connection('amqp://test:test@192.168.161.56:5672//') as conn:
     #     video_queue(conn).declare()
 
     # consume
-    with conn.Consumer(video_queue, callbacks=[process_media]) as consumer:
-        # Process messages and handle events on all channels
-        while True:
-            conn.drain_events()
+#    with conn.Consumer(video_queue, callbacks=[process_media]) as consumer:
+#        # Process messages and handle events on all channels
+#        while True:
+#            conn.drain_events()
 
-# Consume from several queues on the same channel:
-video_queue = Queue('video', exchange=media_exchange, key='video')
-image_queue = Queue('image', exchange=media_exchange, key='image')
-
-with connection.Consumer([video_queue, image_queue],
-                         callbacks=[process_media]) as consumer:
-    while True:
-        connection.drain_events()
